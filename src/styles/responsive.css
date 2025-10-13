@@ -1,0 +1,117 @@
+:root{
+  --berry:#4B1535;
+  --petal:#F3C8DD;
+  --glass-bg: rgba(255,255,255,.60);
+  --glass-br: rgba(255,255,255,.85);
+  --shadow: 0 14px 36px rgba(75,21,53,.14);
+  --nav-h: 64px;        /* desktop */
+  --radius: 18px;
+}
+
+/* Mobile-first tweaks */
+@media (max-width: 480px){
+  :root{ --nav-h: 56px; }
+}
+
+/* Generic layout helpers */
+.section{
+  padding: clamp(40px, 8vw, 96px) 16px;
+  display: grid;
+  place-items: center;
+  scroll-margin-top: var(--nav-h);
+}
+
+.container{
+  width: min(92vw, 1100px);
+}
+
+.glass-card{
+  width: min(92vw, 1100px);
+  border-radius: var(--radius);
+  padding: 20px;
+  color: var(--berry);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-br);
+  box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+/* Headings scale nicely */
+.h-clamp{
+  font-weight: 800;
+  line-height: 1.15;
+  font-size: clamp(22px, 5.2vw, 36px);
+  margin: 0 0 8px;
+}
+
+/* Fix fixed-navbar overlap for anchor jumps */
+#letters, #memories, #wheel, #songs, #love{
+  scroll-margin-top: var(--nav-h);
+}
+
+/* PRIZE WHEEL: keep it readable on phones */
+.wheel-wrap{
+  width: min(88vw, 520px);
+  height: min(88vw, 520px);
+  display: grid;
+  place-items: center;
+}
+
+/* SONGS: responsive grid */
+.songs-grid{
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 560px){
+  .songs-grid{ grid-template-columns: 1fr 1fr; }
+}
+@media (min-width: 920px){
+  .songs-grid{ grid-template-columns: 1fr 1fr 1fr; }
+}
+
+/* Make Spotify iframes full width */
+.spotify-embed{
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  height: 152px; /* default card height */
+}
+@media (max-width: 400px){
+  .spotify-embed{ height: 132px; }
+}
+
+/* LETTERS grid defaults (safe on small screens) */
+.letters-grid{
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+}
+@media (min-width: 720px){
+  .letters-grid{ grid-template-columns: repeat(3, minmax(0,1fr)); }
+}
+@media (min-width: 1024px){
+  .letters-grid{ grid-template-columns: repeat(4, minmax(0,1fr)); }
+}
+
+/* Modal size sanity for phones */
+.letter-modal{
+  width: min(94vw, 560px);
+  max-height: 80vh;
+  overflow: auto;
+  border-radius: 16px;
+}
+
+/* HeartsReveal headline never clips */
+.hearts-headline{
+  font-weight: 800;
+  font-size: clamp(24px, 6vw, 40px);
+  margin-top: calc(var(--nav-h) + 12px);
+}
+
+/* Fixed navbar safe-area padding if you use it */
+.nav-safe{
+  padding-top: max(env(safe-area-inset-top, 0px), 8px);
+  height: var(--nav-h);
+}
