@@ -1,171 +1,176 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
-type LettersGridProps = {
-  /** Section heading */
+type Props = {
   title?: string;
-  /** Small subtitle under heading */
   subtitle?: string;
-  /** 12 labels for the tiles (e.g., months). If omitted, uses Jan–Dec. */
-  labels?: string[];
-  /** 12 letter texts. If omitted, placeholder text is shown. */
-  letters?: string[];
-  /** Optional callback when a letter is opened */
-  onOpenLetter?: (index: number) => void;
+  labels: string[];     // month labels
+  letters: string[];    // same length as labels
+  className?: string;
 };
 
-const LettersGrid: React.FC<LettersGridProps> = ({
+export default function LettersGrid({
   title = "12 Letters",
-  subtitle = "A little note for every month ♡",
+  subtitle = "A little note for each month — starting from Oct 2024.",
   labels,
   letters,
-  onOpenLetter,
-}) => {
-  // Default labels
-  const defaultLabels = useMemo<string[]>(
-    () => ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-    []
+  className = "",
+}: Props) {
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+
+  // safety: if someone passes fewer letters than labels
+  const safeLetters = useMemo(
+    () => labels.map((_, i) => letters[i] ?? ""),
+    [labels, letters]
   );
 
-  const tileLabels: string[] =
-    labels && labels.length === 12 ? labels : defaultLabels;
-
-  // Build data with fallback text
-  const data = useMemo(
-    () =>
-      tileLabels.map((label: string, idx: number) => ({
-        label,
-        text:
-          (letters && letters[idx]) ||
-          `My letter for ${label}. Replace this with your heartfelt note.`,
-      })),
-    [letters, tileLabels]
-  );
-
-  // Modal state: -1 = closed; otherwise index 0..11
-  const [openIndex, setOpenIndex] = useState<number>(-1);
-
-  const close = (): void => setOpenIndex(-1);
-  const next = (): void =>
-    setOpenIndex((i) => ((i + 1) % 12 + 12) % 12);
-  const prev = (): void =>
-    setOpenIndex((i) => ((i - 1) % 12 + 12) % 12);
-
-  const open = (idx: number): void => {
-    setOpenIndex(idx);
-    if (onOpenLetter) onOpenLetter(idx);
-  };
+  // allow Esc to close modal
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenIdx(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   return (
-    <div style={{ width: "min(92vw, 1100px)", color: "#4B1535" }}>
-      <style>{`
-        .letters-wrap h2 { margin: 0 0 6px; font-size: 30px; }
-        .letters-sub { margin: 0 0 18px; opacity: .8; }
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-        @media (max-width: 900px) { .grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+    <div className={className} style={{ width: "min(92vw, 1100px)" }}>
+      <h2 style={{ margin: "0 0 6px", fontWeight: 800, color: "#4B1535" }}>
+        {title}
+      </h2>
+      <p style={{ margin: "0 0 16px", opacity: 0.8, color: "#4B1535" }}>
+        {subtitle}
+      </p>
 
-        .glass {
-          background: rgba(255,255,255,.60);
-          border: 1px solid rgba(255,255,255,.85);
-          box-shadow: 0 14px 36px rgba(75,21,53,.14);
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
-        }
-
-        .tile {
-          position: relative;
-          border-radius: 16px;
-          padding: 18px 16px;
-          text-align: left;
-          cursor: pointer;
-          transition: transform .18s ease, box-shadow .18s ease;
-        }
-        .tile:hover { transform: translateY(-2px); box-shadow: 0 18px 42px rgba(75,21,53,.18); }
-
-        .month { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; letter-spacing: .4px; }
-        .badge {
-          width: 26px; height: 26px; border-radius: 999px;
-          background: #D183A9; color: #fff; font-size: 14px;
-          display: inline-grid; place-items: center;
-          box-shadow: 0 4px 10px rgba(183,94,137,.35);
-        }
-        .hint { margin-top: 8px; font-size: 13px; opacity: .75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-        /* Modal */
-        .sheet-backdrop { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.25); display: grid; place-items: center; padding: 16px; }
-        .sheet {
-          width: min(92vw, 760px); max-height: 82vh; overflow: auto;
-          border-radius: 18px; color: #4B1535; padding: 22px 18px;
-          background: rgba(255,255,255,.75); border: 1px solid rgba(255,255,255,.9);
-          box-shadow: 0 20px 50px rgba(75,21,53,.22); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-          animation: pop .22s ease-out both;
-        }
-        @keyframes pop { from { opacity:0; transform: translateY(6px) scale(.98); } to { opacity:1; transform:none; } }
-        .sheet h3 { margin: 0 0 6px; font-size: 24px; }
-        .sheet .sub { margin: 0 0 14px; opacity: .75; font-size: 13px; }
-        .sheet .body { line-height: 1.6; font-size: 16px; white-space: pre-wrap; }
-        .topbar { display:flex; align-items:center; justify-content: space-between; gap:10px; position: sticky; top: -6px; background: transparent; padding-bottom: 4px; }
-        .icon-btn {
-          border: 1px solid rgba(255,255,255,.9);
-          background: rgba(255,255,255,.9);
-          color: #4B1535;
-          border-radius: 12px;
-          width: 36px; height: 36px; display: grid; place-items: center;
-          cursor: pointer;
-        }
-        .footer-nav { display:flex; align-items:center; justify-content: space-between; gap:8px; margin-top: 16px; }
-      `}</style>
-
-      <div className="letters-wrap">
-        <h2>{title}</h2>
-        <p className="letters-sub">{subtitle}</p>
-
-        <div className="grid">
-          {data.map((item: { label: string; text: string }, idx: number) => (
-            <button
-              key={item.label}
-              className="tile glass"
-              onClick={() => open(idx)}
-              aria-label={`Open ${item.label} letter`}
-            >
-              <div className="month">
-                <span className="badge">{String(idx + 1).padStart(2, "0")}</span>
-                {item.label}
-              </div>
-              <div className="hint">{item.text}</div>
-            </button>
-          ))}
-        </div>
+      {/* GRID: always shows 12 cards; no letter content here */}
+      <div className="letters-grid">
+        {labels.map((label, i) => (
+          <button
+            key={label + i}
+            onClick={() => setOpenIdx(i)}
+            className="letter-card"
+            aria-label={`Open letter for ${label}`}
+          >
+            <span className="month-badge">{String(i + 1).padStart(2, "0")}</span>
+            <span className="month-label">{label}</span>
+            <span className="chev" aria-hidden>▶</span>
+          </button>
+        ))}
       </div>
 
-      {/* Modal */}
-      {openIndex !== -1 && (
-        <div className="sheet-backdrop" onClick={close}>
-          <div className="sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="topbar">
-              <div style={{ fontWeight: 800 }}>{data[openIndex].label} Letter</div>
-              <div style={{ display: "flex", gap: 6 }}>
-                <button className="icon-btn" onClick={prev} aria-label="Previous">‹</button>
-                <button className="icon-btn" onClick={next} aria-label="Next">›</button>
-                <button className="icon-btn" onClick={close} aria-label="Close">×</button>
-              </div>
+      {/* MODAL: only shows when you click a card */}
+      {openIdx !== null && (
+        <div
+          className="letter-backdrop"
+          onClick={() => setOpenIdx(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="letter-modal"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              color: "#4B1535",
+              background: "rgba(255,255,255,.85)",
+              border: "1px solid rgba(255,255,255,.9)",
+              boxShadow: "0 18px 50px rgba(75,21,53,.22)",
+              borderRadius: 16,
+              padding: 18,
+              maxWidth: "min(92vw, 680px)",
+              width: "min(92vw, 680px)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span className="month-badge">{String(openIdx + 1).padStart(2, "0")}</span>
+              <h3 style={{ margin: 0, fontWeight: 800 }}>{labels[openIdx]}</h3>
+              <button
+                onClick={() => setOpenIdx(null)}
+                className="close-x"
+                aria-label="Close"
+              >
+                ✕
+              </button>
             </div>
 
-            <h3 style={{ fontFamily: "'Great Vibes', cursive", fontSize: 28, marginTop: 6 }}>
-              To my love 💌
-            </h3>
-            <p className="sub">Tile {openIndex + 1} • {data[openIndex].label}</p>
-            <div className="body">{data[openIndex].text}</div>
+            <div style={{ marginTop: 12, fontSize: 16, lineHeight: 1.6 }}>
+              {/* preserve your line breaks */}
+              <p style={{ whiteSpace: "pre-line", margin: 0 }}>
+                {safeLetters[openIdx] || "No letter added yet."}
+              </p>
+            </div>
 
-            <div className="footer-nav">
-              <button className="icon-btn" onClick={prev} aria-label="Previous">‹</button>
-              <button className="icon-btn" onClick={next} aria-label="Next">›</button>
+            {/* prev/next */}
+            <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+              <button
+                className="pill"
+                onClick={() => setOpenIdx((prev) => (prev! + 11) % 12)}
+              >
+                ← Prev
+              </button>
+              <button
+                className="pill"
+                onClick={() => setOpenIdx((prev) => (prev! + 1) % 12)}
+              >
+                Next →
+              </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* styles local to this component */}
+      <style>{`
+        .letters-grid{
+          display:grid;
+          gap:12px;
+          grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
+        }
+        @media (max-width:480px){
+          .letters-grid{ grid-template-columns: 1fr; }
+        }
+        .letter-card{
+          display:flex; align-items:center; gap:10px;
+          padding:12px 14px;
+          border-radius:14px;
+          background: linear-gradient(180deg, rgba(255,255,255,.75), rgba(255,255,255,.6));
+          border:1px solid rgba(255,255,255,.85);
+          box-shadow: 0 10px 28px rgba(75,21,53,.14);
+          color:#4B1535;
+          text-align:left;
+          cursor:pointer;
+          width:100%;
+        }
+        .letter-card:focus{ outline:2px solid #4B1535; outline-offset:2px; }
+        .month-badge{
+          flex:0 0 auto;
+          display:inline-grid; place-items:center;
+          width:32px; height:32px; border-radius:10px;
+          font-weight:800; font-size:12px;
+          color:#4B1535;
+          background:#F3C8DD;
+          border:1px solid rgba(255,255,255,.9);
+        }
+        .month-label{ font-weight:700; }
+        .chev{ margin-left:auto; opacity:.55; }
+
+        .letter-backdrop{
+          position:fixed; inset:0; z-index:100;
+          background: linear-gradient(180deg, rgba(75,21,53,.22), rgba(75,21,53,.35));
+          display:grid; place-items:center;
+          padding:16px;
+          backdrop-filter: blur(4px);
+        }
+        .close-x{
+          margin-left:auto;
+          border:none; background:transparent; color:#4B1535;
+          font-size:18px; line-height:1; cursor:pointer;
+          opacity:.8;
+        }
+        .pill{
+          padding:8px 12px; border-radius:999px;
+          border:1px solid rgba(255,255,255,.9);
+          background:#F3C8DD; color:#4B1535; font-weight:700; cursor:pointer;
+        }
+      `}</style>
     </div>
   );
-};
-
-export default LettersGrid;
+}
